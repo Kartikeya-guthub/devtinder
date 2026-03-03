@@ -6,8 +6,11 @@ const User = require('../models/user');
 const userAuth =  async (req,res,next)=>{
 
     try{
-const cookies = req.cookies;
-const { token } = cookies;
+// Support both cookie and Authorization Bearer header
+const authHeader = req.headers['authorization'];
+const token = (authHeader && authHeader.startsWith('Bearer ')
+  ? authHeader.slice(7)
+  : req.cookies?.token) || null;
 if (!token) {
     throw new Error("No token found");
   }

@@ -22,7 +22,10 @@ export function AuthProvider({ children }) {
     fetchMe()
   }, [fetchMe])
 
-  const login = (userData) => setUser(userData)
+  const login = (data) => {
+    if (data.token) localStorage.setItem('token', data.token)
+    setUser(data.user || data)
+  }
 
   const logout = async () => {
     try {
@@ -30,6 +33,7 @@ export function AuthProvider({ children }) {
     } catch {
       // ignore
     }
+    localStorage.removeItem('token')
     setUser(null)
   }
 
