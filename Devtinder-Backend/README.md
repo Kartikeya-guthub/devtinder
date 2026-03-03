@@ -44,7 +44,7 @@ Most backend tutorials stop at CRUD. This project goes further:
 
 | # | Feature | Details |
 |---|---------|---------|
-| 1 | 🔐 **Auth** | Signup, Login, Logout — JWT stored in `httpOnly` cookie |
+| 1 | 🔐 **Auth** | Signup, Login, Logout — JWT returned in response body, sent as `Authorization: Bearer` header |
 | 2 | 👤 **Profile** | View, edit fields, change password |
 | 3 | 💌 **Connection Requests** | Send `Interested`/`Ignore`, respond `Accepted`/`Rejected` |
 | 4 | 🌐 **Developer Feed** | Paginated — excludes users already interacted with |
@@ -52,8 +52,9 @@ Most backend tutorials stop at CRUD. This project goes further:
 | 6 | 📊 **Error Envelope** | Every error includes `requestId`, `error`, `status` |
 | 7 | 🛡️ **Security** | Helmet + CORS + Rate Limiting |
 | 8 | 📖 **Swagger UI** | Interactive API docs at `/api-docs` |
-| 9 | 🧪 **Integration Tests** | 4 tests with Jest + Supertest + Docker MongoDB |
-| 10 | ⚙️ **CI/CD** | GitHub Actions — runs tests on every push |
+| 9 | � **Health Check** | `GET /health` — used by UptimeRobot to keep Render free tier warm |
+| 10 | 🧪 **Integration Tests** | 4 tests with Jest + Supertest + Docker MongoDB |
+| 11 | ⚙️ **CI/CD** | GitHub Actions — runs tests on every push |
 
 ---
 
@@ -68,7 +69,7 @@ Devtinder-Backend/
 │   │   ├── database.js         # Mongoose connection
 │   │   └── swagger.js          # Full OpenAPI 3.0 spec
 │   ├── middlewares/
-│   │   └── auth.js             # JWT cookie auth middleware
+│   │   └── auth.js             # JWT Bearer token auth middleware |
 │   ├── models/
 │   │   ├── user.js             # User schema, getJWT(), validatePassword()
 │   │   └── connectionRequest.js# ConnectionRequest schema + pre-save guard
@@ -128,15 +129,15 @@ Devtinder-Backend/
 
 ## 📡 API Reference
 
-> 🔒 = requires auth cookie. Try everything live at **[http://localhost:3000/api-docs](http://localhost:3000/api-docs)**
+> 🔒 = requires Bearer token. Try everything live at **[https://devetinder.onrender.com/api-docs](https://devetinder.onrender.com/api-docs)**
 
 ### 🔑 Auth
 
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
 | `POST` | `/signup` | — | Register a new developer account |
-| `POST` | `/login` | — | Login — sets `httpOnly` JWT cookie |
-| `POST` | `/logout` | 🔒 | Clears auth cookie |
+| `POST` | `/login` | — | Login — returns JWT token in response body |
+| `POST` | `/logout` | 🔒 | Invalidates session |
 
 **`POST /signup` body + response:**
 ```json
@@ -159,9 +160,14 @@ Devtinder-Backend/
 
 **`POST /login` response:**
 ```json
-// Response 200  (sets httpOnly cookie: token=eyJhbG...)
-{ "message": "Login successful" }
+// Response 200
+{
+  "message": "Login successful",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": { "_id": "...", "firstName": "Kartikeya", ... }
+}
 ```
+> Store the `token` in `localStorage` and send it as `Authorization: Bearer <token>` on all subsequent requests.
 
 ---
 
@@ -274,7 +280,7 @@ Every error response follows a consistent envelope:
 | **CORS** | `cors` | Restricted to `CLIENT_URL`, `credentials: true` for cookies |
 | **Rate Limiting** | `express-rate-limit` | 100 req / IP / 15 min — `429` on breach |
 | **Password Hashing** | `bcrypt` | 10 salt rounds — never stored in plaintext |
-| **Auth Tokens** | `jsonwebtoken` | 1h expiry, `httpOnly` cookie — not accessible from JS |
+| **Auth Tokens** | `jsonwebtoken` | 7d expiry, returned in response body — sent as `Authorization: Bearer` header |
 | **Input Validation** | `validator` | Email format + strong password on signup |
 | **Auth Middleware** | custom | JWT decoded + live user fetched on every protected route |
 | **Self-connection guard** | Mongoose pre-save | Model-level enforcement — cannot connect to yourself |
@@ -286,10 +292,10 @@ Every error response follows a consistent envelope:
 Interactive docs — try every endpoint live:
 
 ```
-http://localhost:3000/api-docs
+https://devetinder.onrender.com/api-docs
 ```
 
-> **To authenticate:** call `POST /login`, copy the `token` cookie value from DevTools, paste it into the **Authorize** dialog.
+> **To authenticate:** call `POST /login`, copy the `token` value from the response, paste it into the **Authorize** dialog (prefix with `Bearer `).
 
 All 11 endpoints documented with schemas, examples, and error codes.
 
@@ -338,7 +344,7 @@ See [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
 | Decision | Why |
 |----------|-----|
-| `httpOnly` cookie for JWT | Token is never accessible from JavaScript — eliminates XSS token theft |
+| Bearer token in `localStorage` over `httpOnly` cookie | Cross-origin deployments (Vercel → Render) have third-party cookie blocked by modern browsers; Bearer header works reliably across all origins |
 | Separate `app.js` and `server.js` | Supertest can import the app without starting the DB or binding a port |
 | Feed filtering with `$nin` at DB level | Avoids loading all users into memory; MongoDB handles exclusion efficiently |
 | Compound index on `(fromUserId, toUserId)` | Prevents duplicate requests with a DB-level guarantee, not just application logic |
@@ -350,13 +356,17 @@ See [.github/workflows/ci.yml](.github/workflows/ci.yml)
 
 ## 🌍 Live Demo
 
-> 🚧 Deployment in progress — demo video coming soon.
-
 | | URL |
 |--|-----|
-| API | `https://api.devtinder.app` *(coming soon)* |
-| Swagger UI | `https://api.devtinder.app/api-docs` *(coming soon)* |
-| Local | `http://localhost:3000/api-docs` |
+| 🌐 Frontend | [https://devtinder-henna.vercel.app](https://devtinder-henna.vercel.app) |
+| ⚙️ Backend API | [https://devetinder.onrender.com](https://devetinder.onrender.com) |
+| 📖 Swagger UI | [https://devetinder.onrender.com/api-docs](https://devetinder.onrender.com/api-docs) |
+| 🩺 Health Check | [https://devetinder.onrender.com/health](https://devetinder.onrender.com/health) |
+| 💻 Local API | `http://localhost:3000/api-docs` |
+
+> **Hosting:** Frontend on [Vercel](https://vercel.com) · Backend on [Render](https://render.com) (free tier) · DB on [MongoDB Atlas](https://www.mongodb.com/atlas)
+> 
+> ⚠️ Render free tier spins down after 15 min of inactivity. First request may take ~30s to wake up. UptimeRobot pings `/health` every 5 min to keep it warm.
 
 ---
 
@@ -376,13 +386,14 @@ npm install
 
 ### 2. Environment Variables
 
-Create `.env` in the project root:
+Create `.env` in the project root (see `.env.example`):
 
 ```env
-port=3000
+PORT=3000
 MONGO_URI=mongodb://localhost:27017/devtinder
 jwt_secret=your_super_secret_key_here
 CLIENT_URL=http://localhost:5173
+NODE_ENV=development
 ```
 
 ### 3. Start MongoDB (Docker)
@@ -440,7 +451,30 @@ npm test
 
 ---
 
-## 👨‍💻 Author
+## � Deployment
+
+### Backend → Render
+
+| Key | Value |
+|-----|-------|
+| Root Directory | `Devtinder-Backend` |
+| Build Command | `npm install` |
+| Start Command | `npm start` |
+| `MONGO_URI` | MongoDB Atlas connection string |
+| `jwt_secret` | Random secret string |
+| `CLIENT_URL` | `https://devtinder-henna.vercel.app` |
+| `NODE_ENV` | `production` |
+
+### Frontend → Vercel
+
+| Key | Value |
+|-----|-------|
+| Root Directory | `/` (repo root — `vercel.json` auto-detected) |
+| `VITE_API_URL` | `https://devetinder.onrender.com` |
+
+---
+
+## �👨‍💻 Author
 
 **Kartikeya Sharma**  
 Built with attention to reliability, security, and maintainability.
