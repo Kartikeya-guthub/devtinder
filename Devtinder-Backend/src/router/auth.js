@@ -43,7 +43,12 @@ authrouter.post('/login', async (req, res) => {
     const isMatch = await user.validatePassword(password);
     if (isMatch) {
       const token = await user.getJWT(); 
-      res.cookie("token", token, { httpOnly: true });
+      res.cookie("token", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      });
       res.send({ message: "Login successful" });
     } else {
       throw new Error("Invalid email or password");
@@ -54,8 +59,11 @@ authrouter.post('/login', async (req, res) => {
 });
 
 authrouter.post('/logout', (req, res) => {
-    res.cookie("token", null,{
-        expires: new Date(Date.now()),
+    res.cookie("token", "", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+        expires: new Date(0),
     }).send({ message: "Logged out successfully" });
 })
 
