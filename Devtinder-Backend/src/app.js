@@ -36,6 +36,8 @@ app.use((req, res, next) => {
 
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDefinition));
 
+app.get('/health', (req, res) => res.status(200).json({ status: 'ok' }));
+
 
 const authRouter = require('./router/auth');
 const profileRouter = require('./router/profile');
