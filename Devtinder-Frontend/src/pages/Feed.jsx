@@ -124,8 +124,8 @@ export default function Feed() {
         )}
 
         {/* About */}
-        {current.about && (
-          <p className="text-sm text-secondary text-center leading-relaxed">{current.about}</p>
+        {(current.about || current.bio) && (
+          <p className="text-sm text-secondary text-center leading-relaxed">{current.about || current.bio}</p>
         )}
 
         {/* Counter */}

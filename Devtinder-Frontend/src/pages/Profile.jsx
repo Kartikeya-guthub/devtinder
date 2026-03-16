@@ -17,7 +17,7 @@ export default function Profile() {
     lastName: user?.lastName || '',
     age: user?.age || '',
     gender: user?.gender || '',
-    about: user?.about || '',
+    about: user?.about || user?.bio || '',
     skills: user?.skills || [],
     photoUrl: user?.photoUrl || '',
   })
@@ -42,7 +42,8 @@ export default function Profile() {
         lastName: form.lastName,
         age: form.age ? Number(form.age) : undefined,
         gender: form.gender || undefined,
-        about: form.about || undefined,
+        // Backend currently stores this field as `bio`.
+        bio: form.about || undefined,
         skills: form.skills,
         photoUrl: form.photoUrl || undefined,
       })
@@ -90,10 +91,10 @@ export default function Profile() {
             </div>
           </div>
 
-          {user?.about && (
+          {(user?.about || user?.bio) && (
             <div>
               <p className="text-xs font-medium text-secondary uppercase tracking-wide mb-1">About</p>
-              <p className="text-sm text-primary">{user.about}</p>
+              <p className="text-sm text-primary">{user?.about || user?.bio}</p>
             </div>
           )}
 
@@ -123,9 +124,9 @@ export default function Profile() {
               <label className="text-xs font-medium text-secondary uppercase tracking-wide">Gender</label>
               <select className="input-field" value={form.gender} onChange={set('gender')}>
                 <option value="">Select</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="others">Others</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
               </select>
             </div>
           </div>

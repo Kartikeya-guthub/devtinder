@@ -27,8 +27,7 @@
 | 🩺 **Health Check** | [https://devetinder.onrender.com/health](https://devetinder.onrender.com/health) |
 
 > **Hosting:** Frontend → [Vercel](https://vercel.com) · Backend → [Render](https://render.com) · Database → [MongoDB Atlas](https://www.mongodb.com/atlas)
->
-> ⚠️ Render free tier spins down after 15 min of inactivity. First request may take ~30s. UptimeRobot pings `/health` every 5 min to keep it warm.
+
 
 ---
 
