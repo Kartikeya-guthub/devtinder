@@ -49,10 +49,12 @@ export default function Auth() {
           emailId: form.email,
           password: form.password,
         })
-        addToast('Account created! Please log in.', 'success')
-        setMode('login')
-        setForm((f) => ({ ...f, password: '' }))
-        return
+        const res = await api.post('/login', {
+          emailId: form.email,
+          password: form.password,
+        })
+        login(res.data)
+        addToast('Account created! You are now logged in.', 'success')
       }
       navigate('/feed')
     } catch (err) {
