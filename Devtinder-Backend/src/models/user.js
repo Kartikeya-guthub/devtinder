@@ -62,6 +62,10 @@ const userSchema = new mongoose.Schema({
                 message: 'You can add up to 10 unique skills only.'
             }
     },
+    endorsements: [{
+        skill: { type: String, required: true },
+        endorsers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
+    }],
     bio:{
         type: String,
         default:" Hey there! I'm using DevTinder."
@@ -69,10 +73,41 @@ const userSchema = new mongoose.Schema({
     photoUrl:{
         type: String,
         default: "👦"
-    } 
+    },
+    githubUrl: {
+        type: String,
+    },
+    experienceYears: {
+        type: Number,
+        default: 0
+    },
+    location: {
+        type: String,
+    },
+    openToWork: {
+        type: Boolean,
+        default: false
+    }
 },
 { 
-    timestamps: true 
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+});
+
+userSchema.virtual('profileCompleteness').get(function() {
+    let score = 0;
+    if (this.firstName) score += 10;
+    if (this.lastName) score += 10;
+    if (this.bio && this.bio !== " Hey there! I'm using DevTinder.") score += 15;
+    if (this.photoUrl && this.photoUrl !== "👦") score += 20;
+    if (this.skills && this.skills.length > 0) score += 15;
+    if (this.githubUrl) score += 15;
+    if (this.location) score += 10;
+    if (this.experienceYears > 0) score += 5;
+    
+    // Cap at 100
+    return Math.min(score, 100);
 });
 
 userSchema.methods.getJWT = async function() {

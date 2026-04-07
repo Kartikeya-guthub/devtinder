@@ -1,5 +1,6 @@
 const User = require('../models/user');
 const ConnectionRequest = require('../models/connectionRequest');
+const { sendEmail } = require('../utils/mailer');
 
 const ALLOWED_SEND_STATUS    = ['Ignore', 'Interested'];
 const ALLOWED_RESPOND_STATUS = ['Accepted', 'Rejected'];
@@ -39,6 +40,27 @@ const sendRequest = async (fromUserId, toUserId, status) => {
 
   const connectionRequest = new ConnectionRequest({ fromUserId, toUserId, status });
   const data = await connectionRequest.save();
+
+  if (status === 'Interested') {
+    // Send email asynchronously
+    const fromUser = await User.findById(fromUserId);
+    if (fromUser && toUser.emailId) {
+      sendEmail({
+        to: toUser.emailId,
+        subject: `New Connection Request from ${fromUser.firstName}`,
+        html: `
+          <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+            <h2 style="color: #6366f1;">DevTinder Network</h2>
+            <p>Hi ${toUser.firstName},</p>
+            <p>You have a new connection request from <strong>${fromUser.firstName} ${fromUser.lastName || ''}</strong>.</p>
+            <p>Log in to DevTinder to view their profile and accept the match!</p>
+            <br/>
+            <p style="font-size: 12px; color: #888;">This is an automated notification from DevTinder.</p>
+          </div>
+        `
+      }).catch(console.error); // Catch errors avoiding blocking the request
+    }
+  }
 
   return {
     message: `${toUser.firstName} ${status === 'Interested' ? 'received your interest!' : 'has been ignored.'}`,

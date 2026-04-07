@@ -1,7 +1,7 @@
 const User = require('../models/user');
 const ConnectionRequest = require('../models/connectionRequest');
 
-const USER_SAFE_DATA = 'firstName lastName photoUrl gender skills bio age';
+const USER_SAFE_DATA = 'firstName lastName photoUrl gender skills bio about age location openToWork experienceYears githubUrl endorsements';
 
 /**
  * Returns pending (Interested) connection requests sent TO the given user.
@@ -47,7 +47,7 @@ const getConnections = async (userId) => {
  * @param {number} page
  * @param {number} limit  (capped at 50)
  */
-const getFeed = async (userId, page = 1, limit = 10) => {
+const getFeed = async (userId, page = 1, limit = 10, filters = {}) => {
   limit = Math.min(limit, 50);
   const skip = (page - 1) * limit;
 
@@ -61,9 +61,25 @@ const getFeed = async (userId, page = 1, limit = 10) => {
     excludeIds.add(row.toUserId.toString());
   });
 
-  const users = await User.find({
-    _id: { $nin: Array.from(excludeIds) },
-  })
+  const query = { _id: { $nin: Array.from(excludeIds) } };
+
+  if (filters?.skills) {
+    // case-insensitive array match
+    const skillList = filters.skills.split(',').map(s => s.trim());
+    if (skillList.length > 0) {
+      query.skills = { $in: skillList.map(s => new RegExp(`^${s}$`, 'i')) };
+    }
+  }
+
+  if (filters?.location) {
+    query.location = new RegExp(filters.location, 'i');
+  }
+
+  if (filters?.openToWork === 'true') {
+    query.openToWork = true;
+  }
+
+  const users = await User.find(query)
     .select(USER_SAFE_DATA)
     .skip(skip)
     .limit(limit);

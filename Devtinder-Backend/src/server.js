@@ -1,4 +1,6 @@
+const http = require('http');
 const app = require('./app');
+const { initializeSocket } = require('./utils/socketUtils');
 const connectDB = require('./config/database');
 
 const PORT = process.env.PORT || 3000;
@@ -6,7 +8,11 @@ const PORT = process.env.PORT || 3000;
 connectDB()
   .then(() => {
     console.log("Database connected successfully");
-    app.listen(PORT, () => {
+    
+    const server = http.createServer(app);
+    initializeSocket(server);
+    
+    server.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);
     });
   })

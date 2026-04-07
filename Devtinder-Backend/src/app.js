@@ -43,9 +43,16 @@ const authRouter = require('./router/auth');
 const profileRouter = require('./router/profile');
 const requestRouter = require('./router/request');
 const userRouter = require('./router/user');
+const projectRouter = require('./router/project');
+const chatRouter = require('./router/chat');
+const activityRouter = require('./router/activity');
+
 app.use('/', authRouter);
 app.use('/', profileRouter);
 app.use('/', requestRouter);
 app.use('/', userRouter);
+app.use('/', projectRouter);
+app.use('/', chatRouter);
+app.use('/', activityRouter);
 
 module.exports = app;
